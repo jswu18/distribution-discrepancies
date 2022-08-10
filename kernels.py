@@ -101,12 +101,8 @@ class PolynomialKernel(BaseAutoDiffKernel):
         self.p = p
 
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
-        inner_prod = jnp.dot(x.T, y)
-        return jnp.sum(
-            jnp.array(
-                [math.comb(self.p, j) * inner_prod**j for j in range(self.p + 1)]
-            ),
-        ).reshape()
+        n = len(x)
+        return ((1 / n) * jnp.dot(x.T, y) + 1) ** self.p
 
 
 class GaussianKernel(BaseAutoDiffKernel):

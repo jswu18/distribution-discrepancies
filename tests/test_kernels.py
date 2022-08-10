@@ -23,10 +23,18 @@ from naive_implementations.naive_kernels import NaiveInverseMultiQuadraticKernel
     ],
 )
 def test_polynomial_kernel(p: int, n_dimensions: int):
-    x = np.random.rand(n_dimensions, 1)
-    y = np.random.rand(n_dimensions, 1)
+    x = np.random.rand(
+        n_dimensions,
+    )
+    y = np.random.rand(
+        n_dimensions,
+    )
     kernel = PolynomialKernel(p)
-    np.array_equal(kernel.k(x, y), polynomial_kernel(X=x, Y=y, degree=p))
+    np.testing.assert_allclose(
+        kernel.k(x, y),
+        polynomial_kernel(X=x.reshape(1, -1), Y=y.reshape(1, -1), degree=p),
+        rtol=1e-6,
+    )
 
 
 @pytest.mark.parametrize(
@@ -34,14 +42,22 @@ def test_polynomial_kernel(p: int, n_dimensions: int):
     [
         [0.1, 2],
         [0.2, 3],
-        [0.3, 5],
+        [0.3, 1],
     ],
 )
 def test_gaussian_kernel(sigma: float, n_dimensions: int):
-    x = np.random.rand(n_dimensions, 1)
-    y = np.random.rand(n_dimensions, 1)
+    x = np.random.rand(
+        n_dimensions,
+    )
+    y = np.random.rand(
+        n_dimensions,
+    )
     kernel = GaussianKernel(sigma)
-    np.array_equal(kernel.k(x, y), rbf_kernel(X=x, Y=y, gamma=sigma))
+    np.testing.assert_allclose(
+        kernel.k(x, y),
+        rbf_kernel(X=x.reshape(1, -1), Y=y.reshape(1, -1), gamma=sigma),
+        rtol=1e-6,
+    )
 
 
 @pytest.mark.parametrize(
@@ -53,10 +69,18 @@ def test_gaussian_kernel(sigma: float, n_dimensions: int):
     ],
 )
 def test_laplacian_kernel(sigma: float, n_dimensions: int):
-    x = np.random.rand(n_dimensions, 1)
-    y = np.random.rand(n_dimensions, 1)
+    x = np.random.rand(
+        n_dimensions,
+    )
+    y = np.random.rand(
+        n_dimensions,
+    )
     kernel = LaplacianKernel(sigma)
-    np.array_equal(kernel.k(x, y), laplacian_kernel(X=x, Y=y, gamma=sigma))
+    np.testing.assert_allclose(
+        kernel.k(x, y),
+        laplacian_kernel(X=x.reshape(1, -1), Y=y.reshape(1, -1), gamma=sigma),
+        rtol=1e-6,
+    )
 
 
 @pytest.mark.parametrize(
@@ -72,11 +96,15 @@ def test_inverse_multi_quadratic_kernel(
     beta: float,
     n_dimensions: int,
 ):
-    x = np.random.rand(n_dimensions, 1)
-    y = np.random.rand(n_dimensions, 1)
+    x = np.random.rand(
+        n_dimensions,
+    )
+    y = np.random.rand(
+        n_dimensions,
+    )
     kernel = InverseMultiQuadraticKernel(c, beta)
     naive_kernel = NaiveInverseMultiQuadraticKernel(c, beta)
-    np.array_equal(kernel.k(x, y), naive_kernel.k(x, y))
+    np.testing.assert_allclose(kernel.k(x, y), naive_kernel.k(x, y), rtol=1e-6)
 
 
 @pytest.mark.parametrize(
@@ -109,6 +137,12 @@ def test_stein_kernel(
     naive_distribution = NaiveGaussian(mu, covariance)
     naive_stein_kernel = SteinKernel(naive_distribution, naive_kernel)
 
-    x = np.random.rand(n_dimensions, 1)
-    y = np.random.rand(n_dimensions, 1)
-    np.array_equal(stein_kernel.k(x, y), naive_stein_kernel.k(x, y))
+    x = np.random.rand(
+        n_dimensions,
+    )
+    y = np.random.rand(
+        n_dimensions,
+    )
+    np.testing.assert_allclose(
+        stein_kernel.k(x, y), naive_stein_kernel.k(x, y), rtol=1e-5
+    )

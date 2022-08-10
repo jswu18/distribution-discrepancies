@@ -32,7 +32,7 @@ class NaiveInverseMultiQuadraticKernel(BaseKernel):
                 2
                 * (self.beta - 1)
                 * (k_pre_exponent ** (self.beta - 2))
-                * np.dot((y - x), (x - y).T)
+                * np.dot((y - x).reshape(-1, 1), (x - y).reshape(1, -1))
                 - k_pre_exponent ** (self.beta - 1) * np.eye(len(x))
             )
         )

@@ -58,8 +58,12 @@ def test_inverse_multi_quadratic_kernel_dk_dx_dy(
     beta: float,
     n_dimensions: int,
 ):
-    x = np.random.rand(n_dimensions, 1)
-    y = np.random.rand(n_dimensions, 1)
+    x = np.random.rand(
+        n_dimensions,
+    )
+    y = np.random.rand(
+        n_dimensions,
+    )
     kernel = InverseMultiQuadraticKernel(c, beta)
     naive_kernel = NaiveInverseMultiQuadraticKernel(c, beta)
     np.testing.assert_allclose(

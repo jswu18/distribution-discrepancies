@@ -1,0 +1,10 @@
+# Virtualenvs
+.env/
+
+# Notebook checkpoints
+*ipynb_checkpoints
+/**/*ipynb_checkpoints
+
+# Pytest
+*pytest_cache
+/**/*pytest_cache

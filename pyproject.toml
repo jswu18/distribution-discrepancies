@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "probability_distribution_discrepancies"
+name = "distribution_discrepancies"
 version = "0.0.0"
 description = "Exploration of different probability distribution discrepancies"
 authors = [

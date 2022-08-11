@@ -162,11 +162,11 @@ class SteinKernel(BaseAutoDiffKernel):
                   + ∇x p(x)^T ∇y k(x, y)
                   + < ∇x k(x, •), ∇y k(•, y)>
     where:
-        k(x, y) is a kernel function (i.e. the Inverse Multi Quadratic Kernel)
+        k(x, y) is a seed kernel function (i.e. the Inverse Multi Quadratic Kernel)
     and
         p(x) is a distribution
     and
-        < ∇x k(x, •), ∇y k(•, y)> = sum_{i=1}^d dk_dx_dy(x,y)}
+        < ∇x k(x, •), ∇y k(•, y)> = sum_{i=1}^d dk_dxi_dyi(x,y)}
                                   = Trace(∇x∇y k(x, y))
     """
 

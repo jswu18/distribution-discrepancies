@@ -38,3 +38,9 @@ class NaiveGaussian(BaseDistribution):
             np.subtract(np.log(1), self.log_z),
             np.dot(self.inv_covariance, np.subtract(x, self.mu)),
         )
+
+    def dlog_p_tilda_dx(self, x: np.ndarray) -> np.ndarray:
+        return -np.dot(self.inv_covariance, np.subtract(x, self.mu))
+
+    def dlog_p_tilda_dx_dx(self, x: np.ndarray) -> np.ndarray:
+        return -self.inv_covariance

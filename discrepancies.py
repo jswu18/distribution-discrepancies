@@ -5,6 +5,7 @@ import numpy as np
 from jax import vmap
 
 from kernels import BaseKernel, SteinKernel
+from distributions import BaseDistribution
 
 
 def _gram(
@@ -79,3 +80,29 @@ def ksd(stein_kernel: SteinKernel, x: np.ndarray) -> float:
     """
     xx = _gram(stein_kernel.k, x, x)
     return jnp.mean(_remove_diagonal(xx)).reshape()
+
+
+def fisher_divergence(p: BaseDistribution, x: np.ndarray):
+    """
+    Computes the Fisher Divergence defined as:
+        J = 0.5*E[||score_p(X)-score_q(X)||^2]
+    where:
+        E is the expectation
+    and
+        score_p, score_q are the score functions of the distributions p and q respectively
+    and
+        X ~ Q distribution.
+
+    :param p: the base distribution that the divergence from samples from X ~ Q will be computed
+    :param x: ndarray of shape (n_samples, n_dimensions)
+    :return: the unbiased estimate of the fisher divergence
+    """
+    d = x.shape[1]
+    return jnp.mean(
+        vmap(
+            lambda x_i: jnp.sum(
+                jnp.diag(p.d_score_dx(x_i).reshape(d, d))
+                + 0.5 * jnp.square(p.score(x_i))
+            )
+        )(x)
+    )

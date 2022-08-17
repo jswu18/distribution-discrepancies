@@ -118,3 +118,112 @@ def test_naive_gaussian_dlog_p_dx(
     gaussian = Gaussian(mu, covariance)
     naive_gaussian = NaiveGaussian(mu, covariance)
     np.testing.assert_almost_equal(gaussian.dlog_p_dx(x), naive_gaussian.dlog_p_dx(x))
+
+
+@pytest.mark.parametrize(
+    "mu,covariance,x,score",
+    [
+        [
+            np.array([0]).astype(float),
+            np.array([[1]]).astype(float),
+            np.array([4]).astype(float),
+            np.array([-4]),
+        ],
+        [
+            np.array([1, 2]).astype(float),
+            np.array([[0.5, 0.1], [0.1, 1]]).astype(float),
+            np.array([2, 1]).astype(float),
+            np.array([-2.2448978, 1.2244898]),
+        ],
+        [
+            np.array([-3]).astype(float),
+            np.array([[2]]).astype(float),
+            np.array([-2]).astype(float),
+            np.array([-0.5]),
+        ],
+    ],
+)
+def test_gaussian_score(
+    mu: np.ndarray, covariance: np.ndarray, x: np.ndarray, score: np.ndarray
+):
+    gaussian = Gaussian(mu, covariance)
+    np.testing.assert_almost_equal(gaussian.score(x), score)
+
+
+@pytest.mark.parametrize(
+    "mu,covariance,x",
+    [
+        [
+            np.array([0]).astype(float),
+            np.array([[1]]).astype(float),
+            np.array([4]).astype(float),
+        ],
+        [
+            np.array([1, 2]).astype(float),
+            np.array([[2, 0.1], [0.1, 1]]).astype(float),
+            np.array([2, 1]).astype(float),
+        ],
+        [
+            np.array([-3]).astype(float),
+            np.array([[2]]).astype(float),
+            np.array([-2]).astype(float),
+        ],
+    ],
+)
+def test_naive_gaussian_score(mu: np.ndarray, covariance: np.ndarray, x: np.ndarray):
+    gaussian = Gaussian(mu, covariance)
+    naive_gaussian = NaiveGaussian(mu, covariance)
+    np.testing.assert_almost_equal(gaussian.score(x), naive_gaussian.score(x))
+
+
+@pytest.mark.parametrize(
+    "mu,covariance,x",
+    [
+        [
+            np.array([0]).astype(float),
+            np.array([[1]]).astype(float),
+            np.array([4]).astype(float),
+        ],
+        [
+            np.array([1, 2]).astype(float),
+            np.array([[0.5, 0.1], [0.1, 1]]).astype(float),
+            np.array([2, 1]).astype(float),
+        ],
+        [
+            np.array([-3]).astype(float),
+            np.array([[2]]).astype(float),
+            np.array([-2]).astype(float),
+        ],
+    ],
+)
+def test_gaussian_d_score_dx(mu: np.ndarray, covariance: np.ndarray, x: np.ndarray):
+    gaussian = Gaussian(mu, covariance)
+    np.testing.assert_almost_equal(gaussian.d_score_dx(x), -np.linalg.inv(covariance))
+
+
+@pytest.mark.parametrize(
+    "mu,covariance,x",
+    [
+        [
+            np.array([0]).astype(float),
+            np.array([[1]]).astype(float),
+            np.array([4]).astype(float),
+        ],
+        [
+            np.array([1, 2]).astype(float),
+            np.array([[2, 0.1], [0.1, 1]]).astype(float),
+            np.array([2, 1]).astype(float),
+        ],
+        [
+            np.array([-3]).astype(float),
+            np.array([[2]]).astype(float),
+            np.array([-2]).astype(float),
+        ],
+    ],
+)
+def test_naive_gaussian_d_score_dx(
+    mu: np.ndarray, covariance: np.ndarray, x: np.ndarray
+):
+    gaussian = Gaussian(mu, covariance)
+    naive_gaussian = NaiveGaussian(mu, covariance)
+    np.testing.assert_almost_equal(gaussian.d_score_dx(x), naive_gaussian.d_score_dx(x))

@@ -1,6 +1,7 @@
 import numpy as np
 
 from kernels import BaseKernel, SteinKernel
+from distributions import BaseDistribution
 
 
 def naive_mmd(kernel: BaseKernel, x: np.ndarray, y: np.ndarray) -> float:
@@ -24,6 +25,22 @@ def naive_ksd(stein_kernel: SteinKernel, x: np.ndarray) -> float:
         np.array(
             [
                 [stein_kernel.k(x[i, :].T, x[j, :].T) for j in range(n) if i != j]
+                for i in range(n)
+            ]
+        )
+    )
+
+
+def naive_fisher_divergence(p: BaseDistribution, x: np.ndarray):
+    d = x.shape[1]
+    n = x.shape[0]
+    return np.mean(
+        np.array(
+            [
+                np.sum(
+                    np.diag(p.d_score_dx(x[i, :]).reshape(d, d))
+                    + 0.5 * np.square(p.score(x[i, :]))
+                )
                 for i in range(n)
             ]
         )

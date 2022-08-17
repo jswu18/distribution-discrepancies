@@ -6,7 +6,7 @@ An exploration of different distribution discrepancies between two distributions
 |-|-|-|-|
 |Maximum Mean Discrepancy (MMD)|At least 2 samples|At least 2 samples|Kernel
 |Kernel Stein Discrepancy (KSD)|Distribution|At least 2 samples|Kernel, Distribution
-|Fisher Divergence|Distribution|At least 1 samples|Distribution
+|Fisher Divergence|Distribution|At least 1 sample|Distribution
 
 To get set up:
 

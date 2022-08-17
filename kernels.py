@@ -52,7 +52,7 @@ class BaseKernel(ABC):
     def dk_dx_dy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """
         Computes the kernel Hessian matrix where element (i, j) is the partial
-        derivative of k with respect o x_i and y_j, dk/(dx_i, dy_j)
+        derivative of k with respect to x_i and y_j, dk/(dx_i, dy_j)
 
         :param x: ndarray of shape (n_dimensions, )
         :param y: ndarray of shape (n_dimensions, )
@@ -175,11 +175,11 @@ class SteinKernel(BaseAutoDiffKernel):
         self.kernel = kernel
 
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
-        n = len(x)
+        d = len(x)
         a1 = self.kernel.k(x, y) * jnp.dot(
             self.distribution.dlog_p_dx(x).T, self.distribution.dlog_p_dx(y)
         )
         a2 = jnp.dot(self.distribution.dlog_p_dx(y).T, self.kernel.dk_dx(x, y))
         a3 = jnp.dot(self.distribution.dlog_p_dx(x).T, self.kernel.dk_dy(x, y))
-        a4 = jnp.trace(self.kernel.dk_dx_dy(x, y).reshape(n, n))
+        a4 = jnp.trace(self.kernel.dk_dx_dy(x, y).reshape(d, d))
         return a1 + a2 + a3 + a4

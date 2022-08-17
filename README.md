@@ -1,6 +1,10 @@
 # distribution_discrepancies
 
-An exploration of different probability distribution discrepancies.
+An exploration of different probability distribution discrepancies:
+
+- Maximum Mean Discrepancy
+- Kernel Stein Discrepancy
+- Fisher Divergence
 
 To get set up:
 

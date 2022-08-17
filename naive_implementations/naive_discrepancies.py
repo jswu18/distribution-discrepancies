@@ -31,7 +31,7 @@ def naive_ksd(stein_kernel: SteinKernel, x: np.ndarray) -> float:
     )
 
 
-def naive_fisher_divergence(p: BaseDistribution, x: np.ndarray):
+def naive_fisher_divergence(p: BaseDistribution, x: np.ndarray) -> float:
     d = x.shape[1]
     n = x.shape[0]
     return np.mean(

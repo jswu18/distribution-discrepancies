@@ -82,7 +82,7 @@ def ksd(stein_kernel: SteinKernel, x: np.ndarray) -> float:
     return jnp.mean(_remove_diagonal(xx)).reshape()
 
 
-def fisher_divergence(p: BaseDistribution, x: np.ndarray):
+def fisher_divergence(p: BaseDistribution, x: np.ndarray) -> float:
     """
     Computes the Fisher Divergence defined as:
         J = 0.5*E[||score_p(X)-score_q(X)||^2]

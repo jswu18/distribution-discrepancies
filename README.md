@@ -1,10 +1,12 @@
 # distribution_discrepancies
 
-An exploration of different probability distribution discrepancies:
+An exploration of different distribution discrepancies between two distributions P and Q. A brief overview:
 
-- Maximum Mean Discrepancy
-- Kernel Stein Discrepancy
-- Fisher Divergence
+|Distribution Discrepancy|P Requirements|Q Requirements|User Inputs|
+|-|-|-|-|
+|Maximum Mean Discrepancy (MMD)|At least 2 samples|At least 2 samples|Kernel
+|Kernel Stein Discrepancy (KSD)|Distribution|At least 2 samples|Kernel, Distribution
+|Fisher Divergence|Distribution|At least 1 samples|Distribution
 
 To get set up:
 

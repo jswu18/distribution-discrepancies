@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from discrepancies import ksd, mmd, fisher_divergence
+from discrepancies import (
+    KernelSteinDiscrepancy,
+    MaximumMeanDiscrepancy,
+    FisherDivergence,
+)
 from distributions import Gaussian
 from kernels import (
     BaseKernel,
@@ -48,7 +52,8 @@ from naive_implementations.naive_discrepancies import (
     ],
 )
 def test_mmd(kernel: BaseKernel, x: np.ndarray, y: np.ndarray, mmd_val: float):
-    assert mmd(kernel, x, y) == mmd_val
+    mmd = MaximumMeanDiscrepancy(kernel)
+    assert mmd.compute(x, y) == mmd_val
 
 
 @pytest.mark.parametrize(
@@ -70,7 +75,8 @@ def test_naive_mmd(kernel: BaseKernel, n_dimensions: int, x_n_samples, y_n_sampl
         y_n_samples,
         n_dimensions,
     )
-    np.testing.assert_almost_equal(mmd(kernel, x, y), naive_mmd(kernel, x, y))
+    mmd = MaximumMeanDiscrepancy(kernel)
+    np.testing.assert_almost_equal(mmd.compute(x, y), naive_mmd(kernel, x, y))
 
 
 @pytest.mark.parametrize(
@@ -118,7 +124,8 @@ def test_ksd(
         kernel=kernel,
         distribution=gaussian,
     )
-    assert ksd(stein_kernel, x) == ksd_val
+    ksd = KernelSteinDiscrepancy(stein_kernel)
+    assert ksd.compute(x) == ksd_val
 
 
 @pytest.mark.parametrize(
@@ -143,7 +150,8 @@ def test_naive_ksd(kernel: BaseKernel, n_dimensions: int, n_samples: int):
         distribution=gaussian,
     )
     x = stein_kernel.distribution.sample(n_samples)
-    np.testing.assert_almost_equal(ksd(stein_kernel, x), naive_ksd(stein_kernel, x))
+    ksd = KernelSteinDiscrepancy(stein_kernel)
+    np.testing.assert_almost_equal(ksd.compute(x), naive_ksd(stein_kernel, x))
 
 
 @pytest.mark.parametrize(
@@ -164,6 +172,7 @@ def test_naive_fisher_divergence(n_dimensions: int, n_samples: int):
         covariance=np.diag(np.random.rand(n_dimensions)),
     )
     x = gaussian.sample(n_samples)
+    fisher_divergence = FisherDivergence(gaussian)
     np.testing.assert_almost_equal(
-        fisher_divergence(gaussian, x), naive_fisher_divergence(gaussian, x)
+        fisher_divergence.compute(x), naive_fisher_divergence(gaussian, x)
     )

@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from discrepancies import (
+    FisherDivergence,
     KernelSteinDiscrepancy,
     MaximumMeanDiscrepancy,
-    FisherDivergence,
 )
 from distributions import Gaussian
 from kernels import (
@@ -16,9 +16,9 @@ from kernels import (
     SteinKernel,
 )
 from naive_implementations.naive_discrepancies import (
+    naive_fisher_divergence,
     naive_ksd,
     naive_mmd,
-    naive_fisher_divergence,
 )
 
 
@@ -54,6 +54,43 @@ from naive_implementations.naive_discrepancies import (
 def test_mmd(kernel: BaseKernel, x: np.ndarray, y: np.ndarray, mmd_val: float):
     mmd = MaximumMeanDiscrepancy(kernel)
     assert mmd.compute(x, y) == mmd_val
+
+
+@pytest.mark.parametrize(
+    "kernel,x,y,t,f_witness_x",
+    [
+        [
+            GaussianKernel(sigma=0.1),
+            np.array([[2, 3], [3, 5], [4, 6]]),
+            np.array([[1, 0], [3, 6], [1, 0]]),
+            np.array([[-1, -1], [0, 0], [1, 1]]),
+            np.array([-0.375450656, -0.503120768, -0.363152992]),
+        ],
+        [
+            LaplacianKernel(sigma=0.1),
+            np.array([[2, 3], [3, 5]]),
+            np.array([[1, 0], [3, 6]]),
+            np.array([[-1, -1], [0, 0]]),
+            np.array([-0.104612232, -0.127773760]),
+        ],
+        [
+            InverseMultiQuadraticKernel(c=0.1, beta=-0.4),
+            np.array([[2, 1], [3, 5]]),
+            np.array([[1, 0], [3, 6]]),
+            np.array([[-1, -1], [0, 0], [1, 1]]),
+            np.array([-0.074487896, -0.222635264, 0.020822048]),
+        ],
+    ],
+)
+def test_mmd_witness_function(
+    kernel: BaseKernel,
+    x: np.ndarray,
+    y: np.ndarray,
+    t: np.ndarray,
+    f_witness_x: np.ndarray,
+):
+    mmd = MaximumMeanDiscrepancy(kernel)
+    np.testing.assert_almost_equal(mmd.witness_function(x, y, t), f_witness_x)
 
 
 @pytest.mark.parametrize(

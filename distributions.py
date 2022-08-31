@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Union, List
+from typing import List, Tuple, Union
 
 import jax.numpy as jnp
 import numpy as np

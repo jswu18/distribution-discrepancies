@@ -4,8 +4,8 @@ import jax.numpy as jnp
 import numpy as np
 from jax import vmap
 
-from kernels import BaseKernel, SteinKernel
 from distributions import BaseDistribution
+from kernels import BaseKernel, SteinKernel
 
 
 def _gram(

@@ -1,8 +1,10 @@
+from typing import List
+
 import numpy as np
 import pytest
 from scipy.stats import multivariate_normal
 
-from distributions import Gaussian
+from distributions import BaseDistribution, Gaussian, Mixture
 from naive_implementations.naive_distributions import NaiveGaussian
 
 
@@ -34,6 +36,52 @@ def test_gaussian_pdf(
 ):
     gaussian = Gaussian(mu, covariance)
     assert gaussian.p(x) == p_x
+
+
+@pytest.mark.parametrize(
+    "weights,distributions,x,p_x",
+    [
+        [
+            [0.1, 0.2, 0.7],
+            [
+                Gaussian(mu=np.array([2, 0]), covariance=np.eye(2)),
+                Gaussian(mu=np.array([1, 2]), covariance=np.eye(2)),
+                Gaussian(mu=np.array([-1, -2]), covariance=np.eye(2)),
+            ],
+            np.array([0.2, 0.1]),
+            0.012914319,
+        ],
+        [
+            [1.0],
+            [Gaussian(mu=np.array([-1, -3]), covariance=2 * np.eye(2))],
+            np.array([0.2]),
+            0.0042919075,
+        ],
+        [
+            [0.2, 0.8],
+            [
+                Gaussian(mu=np.array([-1, -3]), covariance=2 * np.eye(2)),
+                Mixture(
+                    weights=[0.5, 0.5],
+                    distributions=[
+                        Gaussian(mu=np.array([2, 0]), covariance=np.eye(2)),
+                        Gaussian(mu=np.array([1, 2]), covariance=np.eye(2)),
+                    ],
+                ),
+            ],
+            np.array([-0.2, 0.1]),
+            0.011956636,
+        ],
+    ],
+)
+def test_mixture_pdf(
+    weights: List[float], distributions: List[BaseDistribution], x, p_x
+):
+    mixture = Mixture(
+        weights=weights,
+        distributions=distributions,
+    )
+    assert mixture.p(x) == p_x
 
 
 @pytest.mark.parametrize(

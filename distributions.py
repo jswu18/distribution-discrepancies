@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -191,3 +191,46 @@ class Gaussian(BaseAutoDiffDistribution):
 
     def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
         return np.random.multivariate_normal(self.mu.flatten(), self.covariance, size)
+
+
+class Mixture(BaseAutoDiffDistribution):
+    """
+    A Mixture Distribution being the weighted sum of n distributions:
+        p(x) = sum_{i=1}^n w_i p_i(x)
+    where:
+        p_i is the ith distribution
+    and
+        w_i is the weight of the p_i
+    and
+        sum_{i=1}^n w_i = 1
+    """
+
+    def __init__(self, weights: List[float], distributions: List[BaseDistribution]):
+        assert len(weights) == len(
+            distributions
+        ), f"{len(weights)=} != {len(distributions)=}"
+        assert np.sum(weights) == 1, f"{np.sum(weights)=} != 1"
+
+        self.weights = weights
+        self.distributions = distributions
+
+    def log_p_tilda(self, x: np.ndarray) -> float:
+        return jnp.log(
+            jnp.dot(
+                jnp.array(self.weights), jnp.array([d.p(x) for d in self.distributions])
+            )
+        )
+
+    @property
+    def log_z(self) -> float:
+        return 0
+
+    def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
+        if isinstance(size, int):
+            size = (size, 1)
+        return np.vectorize(
+            lambda _: np.random.choice(
+                a=[float(p_i.sample(1)) for p_i in self.distributions],
+                p=self.weights,
+            )
+        )(np.empty(size))

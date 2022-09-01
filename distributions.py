@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import jax.numpy as jnp
 import numpy as np
-from jax import jacfwd
+from jax import jacfwd, jit, tree_util
 
 
 class BaseDistribution(ABC):
@@ -138,14 +140,44 @@ class BaseAutoDiffDistribution(BaseDistribution, ABC):
     Base Distribution class which implements the derivatives using auto differentiation
     """
 
+    @jit
     def dlog_p_dx(self, x: np.ndarray) -> np.ndarray:
         return jacfwd(self.log_p, argnums=0)(x)
 
+    @jit
     def dlog_p_tilda_dx(self, x: np.ndarray) -> np.ndarray:
         return jacfwd(self.log_p_tilda, argnums=0)(x)
 
+    @jit
     def dlog_p_tilda_dx_dx(self, x: np.ndarray) -> np.ndarray:
         return jnp.squeeze(jacfwd(jacfwd(self.log_p_tilda))(x))
+
+    @abstractmethod
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :return: A tuple containing dynamic and a dictionary containing static values
+        """
+        raise NotImplemented
+
+    @classmethod
+    @abstractmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> BaseAutoDiffDistribution:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :param aux_data: tuple containing dynamic values
+        :param children: dictionary containing dynamic values
+        :return: Class instance
+        """
+        raise NotImplemented
 
 
 class Gaussian(BaseAutoDiffDistribution):
@@ -166,7 +198,6 @@ class Gaussian(BaseAutoDiffDistribution):
     """
 
     def __init__(self, mu: np.ndarray, covariance: np.ndarray):
-        self.n = len(mu)
         self.mu = mu.reshape(
             -1,
         )
@@ -174,9 +205,15 @@ class Gaussian(BaseAutoDiffDistribution):
         super().__init__()
 
     @property
+    def n(self):
+        return len(self.mu)
+
+    @property
+    @jit
     def inv_covariance(self):
         return jnp.linalg.inv(self.covariance)
 
+    @jit
     def log_p_tilda(self, x: np.ndarray) -> float:
         return -0.5 * jnp.dot(
             jnp.dot(jnp.subtract(x, self.mu).T, self.inv_covariance),
@@ -184,6 +221,7 @@ class Gaussian(BaseAutoDiffDistribution):
         )
 
     @property
+    @jit
     def log_z(self) -> float:
         return jnp.multiply(self.n / 2, jnp.log(2 * jnp.pi)) + 0.5 * jnp.log(
             jnp.linalg.det(self.covariance)
@@ -191,6 +229,15 @@ class Gaussian(BaseAutoDiffDistribution):
 
     def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
         return np.random.multivariate_normal(self.mu.flatten(), self.covariance, size)
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = (self.mu, self.covariance)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> Gaussian:
+        return cls(*children, **aux_data)
 
 
 class Mixture(BaseAutoDiffDistribution):
@@ -206,14 +253,42 @@ class Mixture(BaseAutoDiffDistribution):
     """
 
     def __init__(self, weights: List[float], distributions: List[BaseDistribution]):
+        self._assert_same_num_weights_and_distributions(weights, distributions)
+        self._assert_weights_sum_to_one(weights)
+
+        self._weights = weights
+        self._distributions = distributions
+
+    @staticmethod
+    def _assert_same_num_weights_and_distributions(weights, distributions):
         assert len(weights) == len(
             distributions
         ), f"{len(weights)=} != {len(distributions)=}"
+
+    @staticmethod
+    def _assert_weights_sum_to_one(weights):
         assert np.sum(weights) == 1, f"{np.sum(weights)=} != 1"
 
-        self.weights = weights
-        self.distributions = distributions
+    @property
+    def weights(self):
+        return self._weights
 
+    @weights.setter
+    def weights(self, weights):
+        self._assert_same_num_weights_and_distributions(weights, self.distributions)
+        self._assert_weights_sum_to_one(weights)
+        self._weights = weights
+
+    @property
+    def distributions(self):
+        return self._distributions
+
+    @distributions.setter
+    def distributions(self, distributions):
+        self._assert_same_num_weights_and_distributions(self.weights, distributions)
+        self._distributions = distributions
+
+    @jit
     def log_p_tilda(self, x: np.ndarray) -> float:
         return jnp.log(
             jnp.dot(
@@ -222,6 +297,7 @@ class Mixture(BaseAutoDiffDistribution):
         )
 
     @property
+    @jit
     def log_z(self) -> float:
         return 0
 
@@ -234,3 +310,23 @@ class Mixture(BaseAutoDiffDistribution):
                 p=self.weights,
             )
         )(np.empty(size))
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"weights": self.weights, "distributions": self.distributions}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> Mixture:
+        return cls(*children, **aux_data)
+
+
+for DistributionClass in [
+    Gaussian,
+    Mixture,
+]:
+    tree_util.register_pytree_node(
+        DistributionClass,
+        DistributionClass.tree_flatten,
+        DistributionClass.tree_unflatten,
+    )

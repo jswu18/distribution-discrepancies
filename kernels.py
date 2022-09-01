@@ -1,9 +1,11 @@
-import math
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Tuple
 
 import jax.numpy as jnp
 import numpy as np
-from jax import jacfwd
+from jax import jacfwd, jit, tree_util
 
 from distributions import BaseDistribution
 
@@ -75,7 +77,35 @@ class BaseAutoDiffKernel(BaseKernel, ABC):
     def dk_dx_dy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         return jnp.squeeze(jacfwd(jacfwd(self.k, argnums=0), argnums=1)(x, y))
 
+    @abstractmethod
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
 
+        :return: A tuple containing dynamic and a dictionary containing static values
+        """
+        raise NotImplemented
+
+    @classmethod
+    @abstractmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> BaseAutoDiffKernel:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :param aux_data: tuple containing dynamic values
+        :param children: dictionary containing dynamic values
+        :return: Class instance
+        """
+        raise NotImplemented
+
+
+@jit
 def _l2_squared(x: np.ndarray, y: np.ndarray) -> float:
     """
     Computes the L2 norm, ||x-y||_2^2
@@ -100,9 +130,21 @@ class PolynomialKernel(BaseAutoDiffKernel):
     def __init__(self, p: int):
         self.p = p
 
+    @jit
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
         n = len(x)
         return ((1 / n) * jnp.dot(x.T, y) + 1) ** self.p
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"p": self.p}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> BaseAutoDiffKernel:
+        return cls(*children, **aux_data)
 
 
 class GaussianKernel(BaseAutoDiffKernel):
@@ -115,8 +157,20 @@ class GaussianKernel(BaseAutoDiffKernel):
     def __init__(self, sigma: float):
         self.sigma = sigma
 
+    @jit
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
         return jnp.exp(-self.sigma * _l2_squared(x, y))
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"sigma": self.sigma}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> GaussianKernel:
+        return cls(*children, **aux_data)
 
 
 class LaplacianKernel(BaseAutoDiffKernel):
@@ -129,8 +183,20 @@ class LaplacianKernel(BaseAutoDiffKernel):
     def __init__(self, sigma: float):
         self.sigma = sigma
 
+    @jit
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
         return jnp.exp(-self.sigma * jnp.sum(jnp.abs(x - y)).reshape())
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"sigma": self.sigma}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> LaplacianKernel:
+        return cls(*children, **aux_data)
 
 
 class InverseMultiQuadraticKernel(BaseAutoDiffKernel):
@@ -150,8 +216,20 @@ class InverseMultiQuadraticKernel(BaseAutoDiffKernel):
     def _k_pre_exponent(self, x: np.ndarray, y: np.ndarray) -> float:
         return self.c**2 + _l2_squared(x, y)
 
+    @jit
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
         return self._k_pre_exponent(x, y) ** self.beta
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"c": self.c, "beta": self.beta}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> InverseMultiQuadraticKernel:
+        return cls(*children, **aux_data)
 
 
 class SteinKernel(BaseAutoDiffKernel):
@@ -174,6 +252,7 @@ class SteinKernel(BaseAutoDiffKernel):
         self.distribution = distribution
         self.kernel = kernel
 
+    @jit
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
         d = len(x)
         a1 = self.kernel.k(x, y) * jnp.dot(
@@ -183,3 +262,29 @@ class SteinKernel(BaseAutoDiffKernel):
         a3 = jnp.dot(self.distribution.dlog_p_dx(x).T, self.kernel.dk_dy(x, y))
         a4 = jnp.trace(self.kernel.dk_dx_dy(x, y).reshape(d, d))
         return a1 + a2 + a3 + a4
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {
+            "distribution": self.distribution,
+            "kernel": self.kernel,
+        }
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> SteinKernel:
+        return cls(*children, **aux_data)
+
+
+for KernelClass in [
+    PolynomialKernel,
+    GaussianKernel,
+    LaplacianKernel,
+    InverseMultiQuadraticKernel,
+    SteinKernel,
+]:
+    tree_util.register_pytree_node(
+        KernelClass,
+        KernelClass.tree_flatten,
+        KernelClass.tree_unflatten,
+    )

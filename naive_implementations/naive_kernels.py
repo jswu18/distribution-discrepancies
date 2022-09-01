@@ -1,5 +1,6 @@
 import numpy as np
 
+from distributions import BaseDistribution
 from kernels import BaseKernel, _l2_squared
 
 
@@ -36,3 +37,19 @@ class NaiveInverseMultiQuadraticKernel(BaseKernel):
                 - k_pre_exponent ** (self.beta - 1) * np.eye(len(x))
             )
         )
+
+
+class NaiveSteinKernel:
+    def __init__(self, distribution: BaseDistribution, kernel: BaseKernel):
+        self.distribution = distribution
+        self.kernel = kernel
+
+    def k(self, x: np.ndarray, y: np.ndarray) -> float:
+        d = len(x)
+        a1 = self.kernel.k(x, y) * np.dot(
+            self.distribution.dlog_p_dx(x).T, self.distribution.dlog_p_dx(y)
+        )
+        a2 = np.dot(self.distribution.dlog_p_dx(y).T, self.kernel.dk_dx(x, y))
+        a3 = np.dot(self.distribution.dlog_p_dx(x).T, self.kernel.dk_dy(x, y))
+        a4 = np.trace(self.kernel.dk_dx_dy(x, y).reshape(d, d))
+        return a1 + a2 + a3 + a4

@@ -1,13 +1,17 @@
-from typing import Callable
+from __future__ import annotations
+
+from functools import partial
+from typing import Any, Callable, Dict, Tuple
 
 import jax.numpy as jnp
 import numpy as np
-from jax import vmap
+from jax import jit, tree_util, vmap
 
 from distributions import BaseDistribution
 from kernels import BaseKernel, SteinKernel
 
 
+@partial(jit, static_argnames=["kernel"])
 def _gram(
     kernel: Callable[[np.ndarray, np.ndarray], np.ndarray], x: np.ndarray, y: np.ndarray
 ) -> np.ndarray:
@@ -24,6 +28,7 @@ def _gram(
     )(x)
 
 
+@jit
 def _remove_diagonal(x: np.ndarray) -> np.ndarray:
     """
     Removes the diagonal elements of a matrix x.
@@ -44,6 +49,7 @@ class MaximumMeanDiscrepancy:
         """
         self.kernel = kernel
 
+    @jit
     def compute(self, x: np.ndarray, y: np.ndarray) -> float:
         """
         Computes the Maximum Mean Discrepancy defined as:
@@ -70,6 +76,7 @@ class MaximumMeanDiscrepancy:
             - 2 * jnp.mean(xy)
         )
 
+    @jit
     def witness_function(self, x: np.ndarray, y: np.ndarray, t: np.ndarray):
         """
         The witness function f* of the MMD between two distribution P and Q:
@@ -95,6 +102,33 @@ class MaximumMeanDiscrepancy:
             - jnp.mean(vmap(lambda y_i: self.kernel.k(y_i, t_i))(y))
         )(t)
 
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :return: A tuple containing dynamic and a dictionary containing static values
+        """
+        children = ()
+        aux_data = {"kernel": self.kernel}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> MaximumMeanDiscrepancy:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :param aux_data: tuple containing dynamic values
+        :param children: dictionary containing dynamic values
+        :return: Class instance
+        """
+        return cls(*children, **aux_data)
+
 
 class KernelSteinDiscrepancy:
     def __init__(self, stein_kernel: SteinKernel):
@@ -105,6 +139,7 @@ class KernelSteinDiscrepancy:
         """
         self.stein_kernel = stein_kernel
 
+    @jit
     def compute(self, x: np.ndarray) -> float:
         """
         Computes the Kernel Stein Discrepancy defined as:
@@ -122,6 +157,33 @@ class KernelSteinDiscrepancy:
         xx = _gram(self.stein_kernel.k, x, x)
         return jnp.mean(_remove_diagonal(xx)).reshape()
 
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :return: A tuple containing dynamic and a dictionary containing static values
+        """
+        children = ()
+        aux_data = {"stein_kernel": self.stein_kernel}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> KernelSteinDiscrepancy:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :param aux_data: tuple containing dynamic values
+        :param children: dictionary containing dynamic values
+        :return: Class instance
+        """
+        return cls(*children, **aux_data)
+
 
 class FisherDivergence:
     def __init__(self, p: BaseDistribution):
@@ -132,6 +194,7 @@ class FisherDivergence:
         """
         self.p = p
 
+    @jit
     def compute(self, x: np.ndarray) -> float:
         """
         Computes the Fisher Divergence defined as:
@@ -155,3 +218,43 @@ class FisherDivergence:
                 )
             )(x)
         )
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :return: A tuple containing dynamic and a dictionary containing static values
+        """
+        children = ()
+        aux_data = {"p": self.p}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(
+        cls, aux_data: Dict[str, Any], children: Tuple
+    ) -> FisherDivergence:
+        """
+        To have JIT-compiled class methods by registering the type as a custom PyTree object.
+        As referenced in:
+        https://jax.readthedocs.io/en/latest/faq.html#strategy-3-making-customclass-a-pytree
+
+        :param aux_data: tuple containing dynamic values
+        :param children: dictionary containing dynamic values
+        :return: Class instance
+        """
+        return cls(*children, **aux_data)
+
+
+for DivergenceClass in [
+    MaximumMeanDiscrepancy,
+    KernelSteinDiscrepancy,
+    FisherDivergence,
+]:
+
+    tree_util.register_pytree_node(
+        DivergenceClass,
+        DivergenceClass.tree_flatten,
+        DivergenceClass.tree_unflatten,
+    )

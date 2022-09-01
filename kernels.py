@@ -143,7 +143,7 @@ class PolynomialKernel(BaseAutoDiffKernel):
     @classmethod
     def tree_unflatten(
         cls, aux_data: Dict[str, Any], children: Tuple
-    ) -> BaseAutoDiffKernel:
+    ) -> PolynomialKernel:
         return cls(*children, **aux_data)
 
 

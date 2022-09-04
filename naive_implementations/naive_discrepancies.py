@@ -1,7 +1,7 @@
 import numpy as np
 
-from kernels import BaseKernel, SteinKernel
 from distributions import BaseDistribution
+from kernels import BaseKernel, SteinKernel
 
 
 def naive_mmd(kernel: BaseKernel, x: np.ndarray, y: np.ndarray) -> float:

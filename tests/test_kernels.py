@@ -11,7 +11,10 @@ from kernels import (
     SteinKernel,
 )
 from naive_implementations.naive_distributions import NaiveGaussian
-from naive_implementations.naive_kernels import NaiveInverseMultiQuadraticKernel
+from naive_implementations.naive_kernels import (
+    NaiveInverseMultiQuadraticKernel,
+    NaiveSteinKernel,
+)
 
 
 @pytest.mark.parametrize(
@@ -222,9 +225,10 @@ def test_naive_stein_kernel(
 
     naive_kernel = NaiveInverseMultiQuadraticKernel(c, beta)
     naive_distribution = NaiveGaussian(mu, covariance)
-    naive_stein_kernel = SteinKernel(naive_distribution, naive_kernel)
+    naive_stein_kernel = NaiveSteinKernel(naive_distribution, naive_kernel)
 
     np.testing.assert_almost_equal(
         stein_kernel.k(x, y),
         naive_stein_kernel.k(x, y),
+        decimal=5,
     )

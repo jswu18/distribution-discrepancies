@@ -47,9 +47,9 @@ class NaiveSteinKernel:
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
         d = len(x)
         a1 = self.kernel.k(x, y) * np.dot(
-            self.distribution.dlog_p_dx(x).T, self.distribution.dlog_p_dx(y)
+            self.distribution.score(x).T, self.distribution.score(y)
         )
-        a2 = np.dot(self.distribution.dlog_p_dx(y).T, self.kernel.dk_dx(x, y))
-        a3 = np.dot(self.distribution.dlog_p_dx(x).T, self.kernel.dk_dy(x, y))
+        a2 = np.dot(self.distribution.score(y).T, self.kernel.dk_dx(x, y))
+        a3 = np.dot(self.distribution.score(x).T, self.kernel.dk_dy(x, y))
         a4 = np.trace(self.kernel.dk_dx_dy(x, y).reshape(d, d))
         return a1 + a2 + a3 + a4

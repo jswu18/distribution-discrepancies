@@ -25,7 +25,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: float being the logarithm of p̃(x)
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement log_p_tilda")
 
     @property
     @abstractmethod
@@ -35,7 +35,7 @@ class BaseDistribution(ABC):
 
         :return: float being the logarithm of z(theta)
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement log_z")
 
     @abstractmethod
     def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
@@ -45,7 +45,7 @@ class BaseDistribution(ABC):
         :param size: either an integer or shape indicating the number of samples desired
         :return: ndarray of samples from the distribution
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement sample")
 
     @abstractmethod
     def dlog_p_dx(self, x: np.ndarray) -> np.ndarray:
@@ -56,7 +56,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, ), the gradient vector
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement dlog_p_dx")
 
     @abstractmethod
     def dlog_p_tilda_dx(self, x: np.ndarray) -> np.ndarray:
@@ -67,7 +67,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, ), the gradient vector
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement dlog_p_tilda_dx")
 
     @abstractmethod
     def dlog_p_tilda_dx_dx(self, x: np.ndarray) -> np.ndarray:
@@ -78,7 +78,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, n_dimensions), the Hessian matrix
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement dlog_p_tilda_dx_dx")
 
     @property
     def z(self) -> float:
@@ -161,7 +161,7 @@ class BaseAutoDiffDistribution(BaseDistribution, ABC):
 
         :return: A tuple containing dynamic and a dictionary containing static values
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement tree_flatten")
 
     @classmethod
     @abstractmethod
@@ -177,7 +177,7 @@ class BaseAutoDiffDistribution(BaseDistribution, ABC):
         :param children: dictionary containing dynamic values
         :return: Class instance
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement tree_unflatten")
 
 
 class Gaussian(BaseAutoDiffDistribution):

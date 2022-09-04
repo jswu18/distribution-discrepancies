@@ -24,7 +24,7 @@ class BaseKernel(ABC):
         :param y: ndarray of shape (n_dimensions, )
         :return: float being the kernel computed between x and y
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement k")
 
     @abstractmethod
     def dk_dx(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -36,7 +36,7 @@ class BaseKernel(ABC):
         :param y: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, ), the gradient vector
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement k")
 
     @abstractmethod
     def dk_dy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -48,7 +48,7 @@ class BaseKernel(ABC):
         :param y: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, ), the gradient vector
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement dk_dy")
 
     @abstractmethod
     def dk_dx_dy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -60,7 +60,7 @@ class BaseKernel(ABC):
         :param y: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, n_dimensions), the Hessian matrix
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement dk_dx_dy")
 
 
 class BaseAutoDiffKernel(BaseKernel, ABC):
@@ -86,7 +86,7 @@ class BaseAutoDiffKernel(BaseKernel, ABC):
 
         :return: A tuple containing dynamic and a dictionary containing static values
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement tree_flatten")
 
     @classmethod
     @abstractmethod
@@ -102,7 +102,7 @@ class BaseAutoDiffKernel(BaseKernel, ABC):
         :param children: dictionary containing dynamic values
         :return: Class instance
         """
-        raise NotImplemented
+        raise NotImplementedError("Needs to implement tree_unflatten")
 
 
 @jit

@@ -145,7 +145,7 @@ def test_naive_inverse_multi_quadratic_kernel(
             np.diag([5, 7, 3, 1]),
             np.arange(4).astype(float),
             np.arange(1, 5).astype(float),
-            125.65655,
+            3.3657486,
         ],
         [
             0.2,
@@ -154,7 +154,7 @@ def test_naive_inverse_multi_quadratic_kernel(
             np.array([[0.2]]),
             np.array([-0.5]),
             np.array([3.5]),
-            -0.9134231,
+            -76.53397,
         ],
         [
             0.3,
@@ -163,7 +163,7 @@ def test_naive_inverse_multi_quadratic_kernel(
             np.diag(np.array([1, 29, 2])),
             np.array([3, 2, 3]).astype(float),
             np.array([-4, 2, -1]).astype(float),
-            -3.4014258,
+            -0.19337103,
         ],
     ],
 )

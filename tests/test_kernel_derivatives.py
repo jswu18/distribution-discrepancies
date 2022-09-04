@@ -165,7 +165,7 @@ def test_naive_inverse_multi_quadratic_kernel_dk_dy(
             -0.2,
             np.array([3]).astype(float),
             np.array([0]).astype(float),
-            np.array([-0.03894725]),
+            np.array([[-0.03894725]]),
         ],
     ],
 )

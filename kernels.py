@@ -75,7 +75,8 @@ class BaseAutoDiffKernel(BaseKernel, ABC):
         return jacfwd(self.k, argnums=1)(x, y)
 
     def dk_dx_dy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        return jnp.squeeze(jacfwd(jacfwd(self.k, argnums=0), argnums=1)(x, y))
+        return jacfwd(jacfwd(self.k, argnums=0), argnums=1)(x, y)
+        # return jnp.squeeze(jacfwd(jacfwd(self.k, argnums=0), argnums=1)(x, y))
 
     @abstractmethod
     def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
@@ -235,14 +236,14 @@ class InverseMultiQuadraticKernel(BaseAutoDiffKernel):
 class SteinKernel(BaseAutoDiffKernel):
     """
     The Stein Kernel, k_p(x, y), is defined as:
-        k_p(x, y) = ∇x log p(x)^T ∇y log p(y)^T k(x, y)
-                  + ∇y p(y)^T ∇x k(x, y)
-                  + ∇x p(x)^T ∇y k(x, y)
+        k_p(x, y) = ∇x log p̃(x)^T ∇y log p̃(y)^T k(x, y)
+                  + ∇y log p̃(y)^T ∇x k(x, y)
+                  + ∇x log p̃(x)^T ∇y k(x, y)
                   + < ∇x k(x, •), ∇y k(•, y)>
     where:
         k(x, y) is a seed kernel function (i.e. the Inverse Multi Quadratic Kernel)
     and
-        p(x) is a distribution
+        p(x) is a distribution of form p̃(x)/z
     and
         < ∇x k(x, •), ∇y k(•, y)> = sum_{i=1}^d dk_dxi_dyi(x,y)}
                                   = Trace(∇x∇y k(x, y))
@@ -254,13 +255,12 @@ class SteinKernel(BaseAutoDiffKernel):
 
     @jit
     def k(self, x: np.ndarray, y: np.ndarray) -> float:
-        d = len(x)
         a1 = self.kernel.k(x, y) * jnp.dot(
-            self.distribution.dlog_p_dx(x).T, self.distribution.dlog_p_dx(y)
+            self.distribution.score(x).T, self.distribution.score(y)
         )
-        a2 = jnp.dot(self.distribution.dlog_p_dx(y).T, self.kernel.dk_dx(x, y))
-        a3 = jnp.dot(self.distribution.dlog_p_dx(x).T, self.kernel.dk_dy(x, y))
-        a4 = jnp.trace(self.kernel.dk_dx_dy(x, y).reshape(d, d))
+        a2 = jnp.dot(self.distribution.score(y).T, self.kernel.dk_dx(x, y))
+        a3 = jnp.dot(self.distribution.score(x).T, self.kernel.dk_dy(x, y))
+        a4 = jnp.trace(self.kernel.dk_dx_dy(x, y))
         return a1 + a2 + a3 + a4
 
     def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:

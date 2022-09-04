@@ -183,7 +183,7 @@ class BaseAutoDiffDistribution(BaseDistribution, ABC):
 class Gaussian(BaseAutoDiffDistribution):
     """
     The Gaussian Distribution defined as:
-        p(x) = p̃(x)/z$$
+        p(x) = p̃(x)/z
     with:
         z = 2π^(n/2) det(Sigma)^(1/2)
     and

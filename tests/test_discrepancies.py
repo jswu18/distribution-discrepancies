@@ -6,7 +6,7 @@ from discrepancies import (
     KernelSteinDiscrepancy,
     MaximumMeanDiscrepancy,
 )
-from distributions import Gaussian
+from distributions import BaseDistribution, Gaussian
 from kernels import (
     BaseKernel,
     GaussianKernel,
@@ -165,6 +165,60 @@ def test_ksd(
     )
     ksd = KernelSteinDiscrepancy(stein_kernel)
     assert ksd.compute(x) == ksd_val
+
+
+@pytest.mark.parametrize(
+    "kernel,p,x,t,f_witness_x",
+    [
+        [
+            GaussianKernel(sigma=0.1),
+            Gaussian(
+                mu=np.zeros(
+                    2,
+                ),
+                covariance=np.eye(2),
+            ),
+            np.array([[2, 3], [3, 5], [4, 6]]).astype(float),
+            np.array([[-1, -1], [0, 0], [1, 1]]).astype(float),
+            np.array([0.3325325, 0.3556344, -1.036464]),
+        ],
+        [
+            LaplacianKernel(sigma=0.1),
+            Gaussian(
+                mu=np.zeros(
+                    2,
+                ),
+                covariance=np.eye(2),
+            ),
+            np.array([[2, 3], [3, 5]]).astype(float),
+            np.array([[-1, -1], [0, 0]]).astype(float),
+            np.array([3.0793705, 0.34192288]),
+        ],
+        [
+            InverseMultiQuadraticKernel(c=0.1, beta=-0.4),
+            Gaussian(
+                mu=np.zeros(
+                    2,
+                ),
+                covariance=np.eye(2),
+            ),
+            np.array([[2, 1], [3, 5]]).astype(float),
+            np.array([[-1, -1], [0, 0], [1, 1]]).astype(float),
+            np.array([1.596536, 0.34268397, -1.8761171]),
+        ],
+    ],
+)
+def test_ksd_witness_function(
+    kernel: BaseKernel,
+    p: BaseDistribution,
+    x: np.ndarray,
+    t: np.ndarray,
+    f_witness_x: np.ndarray,
+):
+    ksd = KernelSteinDiscrepancy(
+        stein_kernel=SteinKernel(distribution=p, kernel=kernel)
+    )
+    np.testing.assert_almost_equal(ksd.witness_function(x, t), f_witness_x)
 
 
 @pytest.mark.parametrize(

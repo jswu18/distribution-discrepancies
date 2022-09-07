@@ -157,6 +157,34 @@ class KernelSteinDiscrepancy:
         xx = _gram(self.stein_kernel.k, x, x)
         return jnp.mean(_remove_diagonal(xx)).reshape()
 
+    @jit
+    def witness_function(self, x: np.ndarray, t: np.ndarray):
+        """
+        The witness function f* of the MMD between two distribution P and Q:
+
+            f*(t) proportional <phi(t), mu_P - mu_Q> = E_P[k(X, t)] - E_Q[k(Y, t)]
+
+        where:
+            E is the expectation
+        and
+            k is the kernel function
+        and
+            X ~ P distribution
+        and
+            Y ~ Q distribution.
+
+        but for the Stein kernel, k_p, we know that E_P[k_p(X, t)] = 0 for X ~ P. Thus we have:
+
+            f*(t) proportional <phi(t), mu_P - mu_Q> = -E_Q[k_p(Y, t)]
+
+        :param x: ndarray of shape (n_samples, n_dimensions)
+        :param t: ndarray of shape (n_samples, n_dimensions)
+        :return: the estimated values of the witness function f(t)
+        """
+        return vmap(
+            lambda t_i: jnp.mean(vmap(lambda x_i: -self.stein_kernel.k(x_i, t_i))(x))
+        )(t)
+
     def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
         """
         To have JIT-compiled class methods by registering the type as a custom PyTree object.

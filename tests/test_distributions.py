@@ -1,7 +1,9 @@
 from typing import List
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
+from jax import jacfwd
 from scipy.stats import multivariate_normal
 
 from distributions import BaseDistribution, Gaussian, Mixture
@@ -111,6 +113,63 @@ def test_scipy_gaussian_pdf(mu: np.ndarray, covariance: np.ndarray, x: np.ndarra
 
 
 @pytest.mark.parametrize(
+    "mu,covariance,x",
+    [
+        [
+            np.array([0]).astype(float),
+            np.array([[1]]).astype(float),
+            np.array([4]).astype(float),
+        ],
+        [
+            np.array([4, 5]).astype(float),
+            np.array([[2, 0.1], [0.1, 1]]).astype(float),
+            np.array([2, 1]).astype(float),
+        ],
+        [
+            np.array([-3]).astype(float),
+            np.array([[2]]).astype(float),
+            np.array([-2]).astype(float),
+        ],
+    ],
+)
+def test_scipy_log_gaussian_pdf(mu: np.ndarray, covariance: np.ndarray, x: np.ndarray):
+    gaussian = Gaussian(mu, covariance)
+    scipy_gaussian = multivariate_normal(mean=mu, cov=covariance)
+    np.testing.assert_almost_equal(
+        gaussian.log_p(x), np.log(scipy_gaussian.pdf(x)), decimal=6
+    )
+
+
+@pytest.mark.parametrize(
+    "mu,covariance,x",
+    [
+        [
+            np.array([0]).astype(float),
+            np.array([[1]]).astype(float),
+            np.array([4]).astype(float),
+        ],
+        [
+            np.array([4, 5]).astype(float),
+            np.array([[2, 0.1], [0.1, 1]]).astype(float),
+            np.array([2, 1]).astype(float),
+        ],
+        [
+            np.array([-3]).astype(float),
+            np.array([[2]]).astype(float),
+            np.array([-2]).astype(float),
+        ],
+    ],
+)
+def test_scipy_score_gaussian_pdf(
+    mu: np.ndarray, covariance: np.ndarray, x: np.ndarray
+):
+    gaussian = Gaussian(mu, covariance)
+    np.testing.assert_array_equal(
+        gaussian.score(x), jacfwd(lambda x_: jnp.log(gaussian.p_tilda(x_)))(x)
+    )
+
+
+@pytest.mark.parametrize(
     "mu,covariance,x,dlog_p_dx",
     [
         [
@@ -123,7 +182,7 @@ def test_scipy_gaussian_pdf(mu: np.ndarray, covariance: np.ndarray, x: np.ndarra
             np.array([1, 2]).astype(float),
             np.array([[0.5, 0.1], [0.1, 1]]).astype(float),
             np.array([2, 1]).astype(float),
-            np.array([-2.24489792,  1.22448984]),
+            np.array([-2.24489792, 1.22448984]),
         ],
         [
             np.array([-3]).astype(float),

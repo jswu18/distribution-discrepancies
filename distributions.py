@@ -53,32 +53,27 @@ class BaseDistribution(ABC):
         Computes the gradient vector of log p(x) where the ith
         element is dlog(p)/dx_i evaluated at x.
 
+            d/dx log(p) = d/dx log(p̃(x)/z(theta))
+                        = d/dx log(p̃(x)) - log(z(theta))
+                        = d/dx log(p̃(x))
+
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, ), the gradient vector
         """
         raise NotImplementedError("Needs to implement dlog_p_dx")
 
     @abstractmethod
-    def dlog_p_tilda_dx(self, x: np.ndarray) -> np.ndarray:
-        """
-        Computes the gradient vector of log p̃(x) where the ith
-        element is dlog(p̃)/dx_i evaluated at x.
-
-        :param x: ndarray of shape (n_dimensions, )
-        :return: ndarray of shape (n_dimensions, ), the gradient vector
-        """
-        raise NotImplementedError("Needs to implement dlog_p_tilda_dx")
-
-    @abstractmethod
-    def dlog_p_tilda_dx_dx(self, x: np.ndarray) -> np.ndarray:
+    def dlog_p_dx_dx(self, x: np.ndarray) -> np.ndarray:
         """
         Computes the Hessian matrix of log p̃(x) where the element (i, j) is the
         derivative of log(p̃) with respect to x_i and x_j, d^2log(p̃)/(dx_i, d_x_j) evaluated at x.
 
+            d/dx^2 log(p) = d/dx^2 log(p̃(x))
+
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, n_dimensions), the Hessian matrix
         """
-        raise NotImplementedError("Needs to implement dlog_p_tilda_dx_dx")
+        raise NotImplementedError("Needs to implement dlog_p_dx_dx")
 
     @property
     def z(self) -> float:
@@ -114,7 +109,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: float being the logarithm of p(x)
         """
-        return jnp.subtract(jnp.log(1), self.log_z) * self.log_p_tilda(x)
+        return jnp.subtract(self.log_p_tilda(x), self.log_z)
 
     def score(self, x: np.ndarray) -> np.ndarray:
         """
@@ -123,7 +118,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, ), the score vector
         """
-        return self.dlog_p_tilda_dx(x)
+        return self.dlog_p_dx(x)
 
     def d_score_dx(self, x: np.ndarray) -> np.ndarray:
         """
@@ -132,7 +127,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, n_dimensions), the Hessian matrix
         """
-        return self.dlog_p_tilda_dx_dx(x)
+        return self.dlog_p_dx_dx(x)
 
 
 class BaseAutoDiffDistribution(BaseDistribution, ABC):
@@ -145,11 +140,7 @@ class BaseAutoDiffDistribution(BaseDistribution, ABC):
         return jacfwd(self.log_p, argnums=0)(x)
 
     @jit
-    def dlog_p_tilda_dx(self, x: np.ndarray) -> np.ndarray:
-        return jacfwd(self.log_p_tilda, argnums=0)(x)
-
-    @jit
-    def dlog_p_tilda_dx_dx(self, x: np.ndarray) -> np.ndarray:
+    def dlog_p_dx_dx(self, x: np.ndarray) -> np.ndarray:
         return jnp.squeeze(jacfwd(jacfwd(self.log_p_tilda))(x))
 
     @abstractmethod

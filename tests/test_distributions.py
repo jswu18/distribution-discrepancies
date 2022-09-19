@@ -117,19 +117,19 @@ def test_scipy_gaussian_pdf(mu: np.ndarray, covariance: np.ndarray, x: np.ndarra
             np.array([0]).astype(float),
             np.array([[1]]).astype(float),
             np.array([4]).astype(float),
-            np.array([3.675753984]),
+            np.array([-4]),
         ],
         [
             np.array([1, 2]).astype(float),
             np.array([[0.5, 0.1], [0.1, 1]]).astype(float),
             np.array([2, 1]).astype(float),
-            np.array([3.3251474, -1.8137169]),
+            np.array([-2.24489792,  1.22448984]),
         ],
         [
             np.array([-3]).astype(float),
             np.array([[2]]).astype(float),
             np.array([-2]).astype(float),
-            np.array([0.63275605]),
+            np.array([-0.5]),
         ],
     ],
 )

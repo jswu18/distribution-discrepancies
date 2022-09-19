@@ -73,7 +73,7 @@ class BaseDistribution(ABC):
         :param x: ndarray of shape (n_dimensions, )
         :return: ndarray of shape (n_dimensions, n_dimensions), the Hessian matrix
         """
-        raise NotImplementedError("Needs to implement dlog_p_tilda_dx_dx")
+        raise NotImplementedError("Needs to implement dlog_p_dx_dx")
 
     @property
     def z(self) -> float:

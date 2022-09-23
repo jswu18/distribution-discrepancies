@@ -1,4 +1,4 @@
-# distribution_discrepancies
+# Distribution Discrepancies
 
 To get set up:
 

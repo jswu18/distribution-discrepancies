@@ -14,3 +14,7 @@ __pycache__
 # Pytest
 *pytest_cache
 /**/*pytest_cache
+
+# Notebook for figures
+/notebooks/figures.ipynb
+/notebook/figures/*

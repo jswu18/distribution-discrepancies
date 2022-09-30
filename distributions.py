@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple, Union
 import jax.numpy as jnp
 import numpy as np
 from jax import jacfwd, jit, tree_util
+from jax.scipy.special import gammaln
 
 
 class BaseDistribution(ABC):
@@ -231,6 +232,193 @@ class Gaussian(BaseAutoDiffDistribution):
         return cls(*children, **aux_data)
 
 
+class Laplace(BaseAutoDiffDistribution):
+    """
+    The Laplace Distribution defined as:
+        p(x) = p̃(x)/z
+    with:
+        z = 2b
+    and
+        p̃(x) = exp(-|x-mu|/b)
+
+    where:
+        mu is the mean parameter
+    and
+        b is the scale parameter
+    """
+
+    def __init__(self, mu: float, b: float):
+        self.mu = mu
+        self.b = b
+        super().__init__()
+
+    @jit
+    def log_p_tilda(self, x: np.ndarray) -> float:
+        return -jnp.abs(x - self.mu) / self.b
+
+    @property
+    @jit
+    def log_z(self) -> float:
+        return jnp.log(2) + jnp.log(self.b)
+
+    def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
+        return np.random.laplace(self.mu, self.b, size)
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"mu": self.mu, "b": self.b}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> Laplace:
+        return cls(*children, **aux_data)
+
+
+class Gamma(BaseAutoDiffDistribution):
+    """
+    The Gamma Distribution defined as:
+        p(x) = p̃(x)/z
+    with:
+        z = Γ(k)θ^k
+    and
+        p̃(x) = x^(k-1) exp(-x/θ)
+
+    where:
+        k is the shape parameter, k>0
+    and
+        θ is the scale parameter, θ>0
+    and
+        Γ is the gamma function
+    """
+
+    def __init__(self, k: float, theta: float):
+        assert k > 0, f"k > 0, {k=}"
+        self.k = k
+        assert theta > 0, f"theta > 0, {theta=}"
+        self.theta = theta
+        super().__init__()
+
+    @jit
+    def log_p_tilda(self, x: np.ndarray) -> float:
+        return (self.k - 1) * jnp.log(x) - jnp.divide(x, self.theta)
+
+    @property
+    @jit
+    def log_z(self) -> float:
+        return gammaln(self.k) + self.k * jnp.log(self.theta)
+
+    def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
+        return np.random.multivariate_normal(shape=self.k, scale=self.theta, size=size)
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"k": self.k, "theta": self.theta}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> Gamma:
+        return cls(*children, **aux_data)
+
+
+class Cauchy(BaseAutoDiffDistribution):
+    """
+    The Cauchy Distribution defined as:
+        p(x) = p̃(x)/z
+    with:
+        z = πγ
+    and
+        p̃(x) = (γ^2)/((x-x_0)^2+γ^2)
+
+    where:
+        x_0 is the location parameter, the peak of the distribution
+    and
+        γ is the scale parameter, specifies the half-width at half-maximum
+    """
+
+    def __init__(self, x0: float, gamma: float):
+        self.x0 = x0
+        self.gamma = gamma
+        super().__init__()
+
+    @jit
+    def log_p_tilda(self, x: np.ndarray) -> float:
+        return 2 * jnp.log(self.gamma) - jnp.log((x - self.x0) ** 2 + self.gamma**2)
+
+    @property
+    @jit
+    def log_z(self) -> float:
+        return jnp.log(jnp.pi * self.gamma)
+
+    def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
+        return self.x0 + self.gamma * np.random.standard_cauchy(size)
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {"x0": self.x0, "gamma": self.gamma}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> Cauchy:
+        return cls(*children, **aux_data)
+
+
+class T(BaseAutoDiffDistribution):
+    """
+    The t Distribution defined as:
+        p(x) = p̃(x)/z
+    with:
+        z = (sqrt(pi*df)*gamma(df/2))/gamma((df+1)/2)
+    and
+        p̃(x) = (1+(((x-loc)/scale)^2)/df)^(-(df+1)/2)
+
+    where:
+        df is the degrees of freedom
+    and
+        beta is the beta function
+    """
+
+    def __init__(self, degrees_of_freedom: int, loc: float, scale: float):
+        assert degrees_of_freedom > 0, f"degrees_of_freedom > 0, {degrees_of_freedom=}"
+        self.degrees_of_freedom = degrees_of_freedom
+        assert scale > 0, f"scale > 0, {scale=}"
+        self.loc = loc
+        self.scale = scale
+        super().__init__()
+
+    @jit
+    def log_p_tilda(self, x: np.ndarray) -> float:
+        return -((self.degrees_of_freedom + 1) / 2) * jnp.log(
+            1 + (((x - self.loc) / self.scale) ** 2 / self.degrees_of_freedom)
+        )
+
+    @property
+    @jit
+    def log_z(self) -> float:
+        return (
+            gammaln(self.degrees_of_freedom / 2)
+            + jnp.log(self.scale * jnp.sqrt(jnp.pi * self.degrees_of_freedom))
+            - gammaln((self.degrees_of_freedom + 1) / 2)
+        )
+
+    def sample(self, size: Union[int, Tuple[int]]) -> np.ndarray:
+        return self.loc + self.scale * np.random.standard_t(
+            self.degrees_of_freedom, size
+        )
+
+    def tree_flatten(self) -> Tuple[Tuple, Dict[str, Any]]:
+        children = ()
+        aux_data = {
+            "degrees_of_freedom": self.degrees_of_freedom,
+            "loc": self.loc,
+            "scale": self.scale,
+        }
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data: Dict[str, Any], children: Tuple) -> T:
+        return cls(*children, **aux_data)
+
+
 class Mixture(BaseAutoDiffDistribution):
     """
     A Mixture Distribution being the weighted sum of n distributions:
@@ -314,6 +502,10 @@ class Mixture(BaseAutoDiffDistribution):
 
 for DistributionClass in [
     Gaussian,
+    Laplace,
+    Gamma,
+    Cauchy,
+    T,
     Mixture,
 ]:
     tree_util.register_pytree_node(

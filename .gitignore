@@ -10,6 +10,8 @@ __pycache__
 # Notebook checkpoints
 *ipynb_checkpoints
 /**/*ipynb_checkpoints
+.DS_Store
+notebooks/.DS_Store
 
 # Pytest
 *pytest_cache

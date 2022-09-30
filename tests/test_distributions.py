@@ -1,12 +1,12 @@
-from typing import List
+from typing import Callable, List
 
 import jax.numpy as jnp
 import numpy as np
 import pytest
 from jax import jacfwd
-from scipy.stats import multivariate_normal
+from scipy.stats import cauchy, gamma, laplace, multivariate_normal, t
 
-from distributions import BaseDistribution, Gaussian, Mixture
+from distributions import BaseDistribution, Cauchy, Gamma, Gaussian, Laplace, Mixture, T
 from naive_implementations.naive_distributions import NaiveGaussian
 
 
@@ -87,29 +87,52 @@ def test_mixture_pdf(
 
 
 @pytest.mark.parametrize(
-    "mu,covariance,x",
+    "distribution,scipy_distribution",
     [
         [
-            np.array([0]).astype(float),
-            np.array([[1]]).astype(float),
-            np.array([4]).astype(float),
+            Gaussian(np.array([0]).astype(float), np.array([[1]]).astype(float)),
+            lambda x: multivariate_normal(
+                mean=np.array([0]).astype(float), cov=np.array([[1]]).astype(float)
+            ).pdf(x),
         ],
         [
-            np.array([4, 5]).astype(float),
-            np.array([[2, 0.1], [0.1, 1]]).astype(float),
-            np.array([2, 1]).astype(float),
+            Laplace(mu=0, b=2),
+            lambda x: laplace.pdf(x, 0, 2),
         ],
         [
-            np.array([-3]).astype(float),
-            np.array([[2]]).astype(float),
-            np.array([-2]).astype(float),
+            Gamma(k=1, theta=2),
+            lambda x: gamma.pdf(x, a=1, loc=0, scale=2),
+        ],
+        [
+            Gamma(k=3, theta=4),
+            lambda x: gamma.pdf(x, a=3, loc=0, scale=4),
+        ],
+        [
+            Cauchy(x0=2, gamma=3),
+            lambda x: cauchy.pdf(x, loc=2, scale=3),
+        ],
+        [
+            T(degrees_of_freedom=2, loc=1, scale=2),
+            lambda x: t.pdf(x, df=2, loc=1, scale=2),
+        ],
+        [
+            T(degrees_of_freedom=4, loc=3, scale=10),
+            lambda x: t.pdf(x, df=4, loc=3, scale=10),
         ],
     ],
 )
-def test_scipy_gaussian_pdf(mu: np.ndarray, covariance: np.ndarray, x: np.ndarray):
-    gaussian = Gaussian(mu, covariance)
-    scipy_gaussian = multivariate_normal(mean=mu, cov=covariance)
-    np.testing.assert_almost_equal(gaussian.p(x), scipy_gaussian.pdf(x))
+@pytest.mark.parametrize(
+    "x",
+    [
+        4.3,
+        2.1,
+        20,
+    ],
+)
+def test_scipys_pdfs(
+    distribution: BaseDistribution, scipy_distribution: Callable, x: float
+):
+    np.testing.assert_almost_equal(distribution.p(x), scipy_distribution(x))
 
 
 @pytest.mark.parametrize(

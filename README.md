@@ -61,8 +61,3 @@ The Langevin Stein Kernel has a complex mathematical formulation. We can break d
   </figcaption> 
 </figure>
 
-<figure class="image" align="center">
-  <img src="figures/cauchy_stein_kernel_decomposed.gif" width="70%">
-  <figcaption> The Langevin Stein Kernel for the Cauchy Distribution 
-  </figcaption> 
-</figure>

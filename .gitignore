@@ -19,4 +19,4 @@ notebooks/.DS_Store
 
 # Notebook for figures
 /notebooks/figures.ipynb
-/notebook/figures/*
+/notebooks/figures/*

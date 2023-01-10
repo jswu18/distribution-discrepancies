@@ -56,8 +56,8 @@ The Langevin Kernel Stein Discrepancy compares one set of samples from an unknow
 The Langevin Stein Kernel has a complex mathematical formulation. We can break down the separate terms to better understand the different components:
 
 <figure class="image" align="center">
-  <img src="figures/laplace_stein_kernel_decomposed.gif" width="49.5%">
-  <img src="figures/cauchy_stein_kernel_decomposed.gif" width="49.5%">
+  <img src="figures/laplace_stein_kernel_decomposed.gif" width="40%">
+  <img src="figures/cauchy_stein_kernel_decomposed.gif" width="40%">
   <figcaption> The Langevin Stein Kernel for the Laplace Distribution (Left) and Cauchy Distribution (Right)
   </figcaption> 
 </figure>

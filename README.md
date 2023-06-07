@@ -3,7 +3,7 @@
 - Kernel Stein Discrepancy
 - Fisher Divergence
 
-For more information, check out [my KSD blog post](https://jswu18.github.io/blog-posts/the-kernel-stein-discrepancy.html)!
+For more information, check out [my KSD blog post](https://jswu18.github.io/posts/2022/10/kernel-stein-discrepancy/)!
 
 
 To get set up:

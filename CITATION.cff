@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "distribution-discrepancies"
+authors:
+  - family-names: "Wu"
+    given-names: "James"
+    email: "jswu18@gmail.com"
+version: "0.0.0"
+date-released: "2024-02-03"
+url: "https://github.com/jswu18/distribution-discrepancies"
+repository-code: "https://github.com/jswu18/distribution-discrepancies"
+license: "MIT"
